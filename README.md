@@ -1,207 +1,52 @@
-# DotNetJS
+<p align="center">
+  <a href="https://bootsharp.com" target="_blank" rel="noopener noreferrer">
+    <img width="200" src="https://raw.githubusercontent.com/elringus/bootsharp/main/docs/public/favicon.svg" alt="Bootsharp">
+  </a>
+</p>
+<br/>
+<p align="center">
+  <a href="https://www.nuget.org/packages/Bootsharp"><img src="https://img.shields.io/nuget/v/Bootsharp" alt="nuget"></a>
+  <a href="https://codefactor.io/repository/github/elringus/bootsharp/overview/main"><img src="https://codefactor.io/repository/github/elringus/bootsharp/badge/main" alt="codefactor"></a>
+  <a href="https://codecov.io/gh/elringus/bootsharp"><img src="https://codecov.io/gh/elringus/bootsharp/branch/main/graph/badge.svg?token=AAhei51ETt" alt="codecov"></a>
+  <a href="https://github.com/elringus/bootsharp/actions/workflows/codeql.yml"><img src="https://github.com/elringus/bootsharp/actions/workflows/codeql.yml/badge.svg" alt="codeql"></a>
+</p>
+<br/>
 
-[![NuGet](https://img.shields.io/nuget/v/DotNetJS)](https://www.nuget.org/packages/DotNetJS)
-[![CodeFactor](https://codefactor.io/repository/github/elringus/dotnetjs/badge/main)](https://codefactor.io/repository/github/elringus/dotnetjs/overview/main)
-[![codecov](https://codecov.io/gh/Elringus/DotNetJS/branch/main/graph/badge.svg?token=AAhei51ETt)](https://codecov.io/gh/Elringus/DotNetJS)
-[![CodeQL](https://github.com/Elringus/DotNetJS/actions/workflows/codeql.yml/badge.svg)](https://github.com/Elringus/DotNetJS/actions/workflows/codeql.yml)
+# Use C# in web apps with comfort
 
-The solution provides user-friendly workflow for consuming .NET C# programs and libraries in any JavaScript environment, be it web browsers, Node.js or custom restricted spaces, like [web extensions](https://code.visualstudio.com/api/extension-guides/web-extensions) for VS Code, where neither node modules nor browser APIs are available.
+Bootsharp streamlines consuming .NET C# apps and libraries in web projects. It's ideal for building web applications, where domain (backend) is authored in .NET C#, while the UI (frontend) is a standalone TypeScript or JavaScript project. Think of it as [Embind](https://emscripten.org/docs/porting/connecting_cpp_and_javascript/embind.html) for C++ or [wasm-bindgen](https://github.com/rustwasm/wasm-bindgen) for Rust.
 
-![](https://raw.githubusercontent.com/Elringus/CDN/main/dotnetjs.png)
+![](https://raw.githubusercontent.com/elringus/bootsharp/main/docs/public/img/banner.png)
 
-The solution is based on two main components:
+## Features
 
-- [JavaScript](https://github.com/Elringus/DotNetJS/tree/main/JavaScript). Consumes compiled C# assemblies and .NET runtime WebAssembly module to provide C# interoperability layer in JavaScript. The library is environment-agnostic — it doesn't depend on platform-specific APIs, like browser DOM or node modules and can be imported as CommonJS or ECMAScript module or consumed via script tag in browsers.
-- [DotNet](https://github.com/Elringus/DotNetJS/tree/main/DotNet). Provides JavaScript interoperability layer in C# and packs project output into single-file JavaScript library via MSBuild task. Produced library contains dotnet runtime initialized with the project assemblies and ready to be used as interoperability layer for the packaged C# project. Can optionally emit type definitions to bootstrap TypeScript development.
+✨ High-level C# <-> TypeScript interop
 
-## Quick Start
+📦 Embeds binaries to single-file ES module
 
-In C# project configuration file specify `Microsoft.NET.Sdk.BlazorWebAssembly` SDK and import `DotNetJS` NuGet package:
+🗺️ Works in browsers and JS runtimes (Node, Deno, Bun)
 
-```xml
+⚡ Generates bindings and types over C# interfaces
 
-<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+🏷️ Supports interop over object instances
 
-    <PropertyGroup>
-        <TargetFramework>net6.0</TargetFramework>
-    </PropertyGroup>
+🛠️ Allows customizing emitted bindings
 
-    <ItemGroup>
-        <PackageReference Include="DotNetJS" Version="*"/>
-    </ItemGroup>
+🔥 Supports WASM multi-threading, AOT, trimming
 
-</Project>
-```
 
-To associate a JavaScript function with a C# method use `JSFunction` attribute. To expose a C# method to JavaScript, use `JSInvokable` attribute:
+## 🎬 Get Started
 
-```csharp
-using System;
-using DotNetJS;
-using Microsoft.JSInterop;
+https://bootsharp.com/guide/getting-started
 
-namespace HelloWorld;
+### Why not Blazor?
 
-public partial class Program
-{
-    // Entry point is invoked by the JavaScript runtime on boot.
-    public static void Main ()
-    {
-        // Invoking 'dotnet.HelloWorld.GetHostName()' JavaScript function.
-        var hostName = GetHostName();
-        // Writing to JavaScript host console.
-        Console.WriteLine($"Hello {hostName}, DotNet here!");
-    }
+In contrast to solutions like Blazor, which attempt to bring the entire web platform inside .NET, Bootsharp facilitates high-level interoperation between C# and TypeScript, allowing to build the UI layer under its natural ecosystem using industry-standard tooling and frameworks, such as [React](https://react.dev) and [Svelte](https://svelte.dev).
 
-    [JSFunction] // The interoperability code is auto-generated.
-    public static partial string GetHostName ();
+### Why not `System.JavaScript`?
 
-    [JSInvokable] // The method is invoked from JavaScript.
-    public static string GetName () => "DotNet";
-}
-```
+Bootsharp itself is built on top of [System.Runtime.InteropServices.JavaScript](https://learn.microsoft.com/en-us/aspnet/core/blazor/javascript-interoperability/import-export-interop?view=aspnetcore-8.0) introduced in .NET 7.
 
-Publish the project with `dotnet publish`. A single-file `dotnet.js` library will be produced under the "bin" directory. Consume the library depending on the environment:
+If you're looking to expose simple library API to JavaScript and don't need type declarations, Bootsharp would probably be an overkill. However, .NET's interop is low-level, doesn't support passing custom types by value and requires lots of boilerplate to author the bindings. It's impractical for large API surfaces.
 
-### Browser
-
-```html
-<!-- Import as a global 'dotnet' object via script tag. -->
-<script src="dotnet.js"></script>
-
-<script>
-
-    // Providing implementation for 'GetHostName' function declared in 'HelloWorld' C# assembly.
-    dotnet.HelloWorld.GetHostName = () => "Browser";
-
-    window.onload = async function () {
-        // Booting the DotNet runtime and invoking entry point.
-        await dotnet.boot();
-        // Invoking 'GetName()' C# method defined in 'HelloWorld' assembly.
-        const guestName = dotnet.HelloWorld.GetName();
-        console.log(`Welcome, ${guestName}! Enjoy your global space.`);
-    };
-
-</script>
-```
-
-### Node.js
-
-```js
-// Import as CommonJS module.
-const dotnet = require("dotnet");
-// ... or as ECMAScript module in node v17 or later.
-import dotnet from "dotnet.js";
-
-// Providing implementation for 'GetHostName' function declared in 'HelloWorld' C# assembly.
-dotnet.HelloWorld.GetHostName = () => "Node.js";
-
-(async function () {
-    // Booting the DotNet runtime and invoking entry point.
-    await dotnet.boot();
-    // Invoking 'GetName()' C# method defined in 'HelloWorld' assembly.
-    const guestName = dotnet.HelloWorld.GetName();
-    console.log(`Welcome, ${guestName}! Enjoy your module space.`);
-})();
-```
-
-## Example Projects
-
-Find the following sample projects in this repository:
-
-- [Hello World](https://github.com/Elringus/DotNetJS/tree/main/Samples/HelloWorld) — Consume the produced library as a global import in browser, CommonJS or ES module in node.
-- [Web Extension](https://github.com/Elringus/DotNetJS/tree/main/Samples/WebExtension) — Consume the library in VS Code web extension, which works in both web and standalone versions of the IDE.
-- [Runtime Tests](https://github.com/Elringus/DotNetJS/tree/main/JavaScript/test) — Integration tests featuring various usage scenarios: async method invocations, interop with instances, sending raw byte arrays, streaming, etc.
-
-## Events
-
-To make a C# method act as event broadcaster for JavaScript consumers, annotate it with `[JSEvent]` attribute:
-
-```csharp
-[JSEvent]
-public static partial string OnSomethingHappened (string payload);
-```
-
-— and consume it from JavaScript as follows:
-
-```js
-dotnet.MyApp.OnSomethingHappened.subscribe(handleSomething);
-dotnet.MyApp.OnSomethingHappened.unsubscribe(handleSomething);
-
-function handleSomething (payload) {
-
-}
-```
-
-When the method in invoked in C#, subscribed JavaScript handlers will be notified.
-
-In TypeScript the event will have typed generic declaration corresponding to the event arguments.
-
-## Sideloading Binaries
-
-By default, DotNetJS build task will embed project's DLLs and .NET WASM runtime to the generated JS library. While convenient and even required in some cases (eg, for VS Code web extensions), this also adds about 30% of extra size due to binary->base64 conversion of the embedded files.
-
-To disable the embedding, set `EmbedBinaries` build property to false. You will then have to provide the required data when booting `dotnet.js`:
-
-```js
-const bootData = {
-    wasm: {},
-    assemblies: [],
-    entryAssemblyName: "Project.dll"
-};
-await dotnet.boot(bootData);
-```
-
-— this way the binary files can be streamed directly from server to optimize traffic and initial load time.
-
-When embedding is disabled, you will probably want to preserve build artifacts as well. Set `Clean` build property to false to prevent DotNetJS from wiping them:
-
-```xml
-<PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
-    <EmbedBinaries>false</EmbedBinaries>
-    <Clean>false</Clean>
-</PropertyGroup>
-```
-
-## Namespace Pattern
-
-By default, all the generated JavaScript binding objects and TypeScript declarations are grouped under corresponding C# namespaces.
-
-To override the generated namespaces, apply `JSNamespace` attribute to the entry assembly of the C# program. The attribute expects `pattern` and `replacement` arguments, which are provided to [Regex.Replace](https://docs.microsoft.com/en-us/dotnet/api/system.text.regularexpressions.regex.replace?view=net-6.0#system-text-regularexpressions-regex-replace(system-string-system-string-system-string)) when building the generated namespace name.
-
-For example, to transform `Company.Product.Space` into `Space` namespace, use the following pattern:
-
-```csharp
-[assembly:JSNamespace(@"Company\.Product\.(\S+)", "$1")]
-```
-
-## JSON Serializer Options
-
-To override default JSON serializer options used for marshalling the interop data, use `JS.Runtime.ConfigureJson` method before the program entry point is invoked. For example, below will add `JsonStringEnumConverter` converter to allow serializing enums via strings:
-
-```csharp
-static class Program
-{
-    static Program () // Static constructor is invoked before 'Main'
-    {
-        JS.Runtime.ConfigureJson(options =>
-            options.Converters.Add(new JsonStringEnumConverter())
-        );
-    }
-
-    public static void Main () { }
-}
-```
-
-## Compiling Runtime
-
-To compile and test the runtime run the following in order under [JavaScript](https://github.com/Elringus/DotNetJS/tree/main/JavaScript) folder:
-
-```
-scripts/install-emsdk.sh
-scripts/compile-runtime.sh
-npm build
-scripts/compile-test.sh
-npm test
-```
+With Bootsharp, you'll be able to just feed it your domain-specific interfaces and use them seamlessly from the other side, as if they were originally authored in TypeScript (and vice-versa). Additionally, Bootsharp provides an option to bundle all the binaries into single-file ES module and patches .NET's internal JavaScript code to make it compatible with constrained runtime environments, such as VS Code [web extensions](https://code.visualstudio.com/api/extension-guides/web-extensions).
